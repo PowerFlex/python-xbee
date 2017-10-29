@@ -141,6 +141,78 @@ class XBeeBase(object):
 
         return packet
 
+    def _split_sniffed(self, data):
+        """
+        _split_sniffed: binary data -> {'id':str,
+                                         'param':binary data,
+                                         ...}
+
+        _split_sniffed takes a sniffed data packet sent to an XBee device
+        and converts it into a dictionary. This dictionary provides
+        names for each segment of binary data as specified in the
+        api_commands spec.
+        """
+        frame_type = data[0]
+        frame_spec = None
+        print "Frame Type:", frame_type
+        for name, field_list in self.api_commands.iteritems():
+            print "Name:", name, field_list
+            if field_list[0]['default'] == frame_type:
+                frame_spec = field_list
+
+        if frame_spec == None:
+            raise CommandFrameException("Unrecognized api packet with "
+                                        "frame_type byte {0}".format(
+                                                           frame_type))
+        parsed={}
+        index = 0
+        for field in frame_spec:
+            if field['len'] == 'null_terminated':
+                field_data = b''
+
+                while data[index:index+1] != b'\x00':
+                    field_data += data[index:index+1]
+                    index += 1
+
+                index += 1
+                info[field['name']] = field_data
+            elif field['len'] is not None:
+                if index + field['len'] > len(data):
+                    raise ValueError("Response packet was shorter than "
+                                     "expected; expected: {}, got: {} "
+                                     "bytes".format(
+                                                    index+field['len'],
+                                                    len(data))
+                                    )
+
+                field_data = data[index:index + field['len']]
+                parsed[field['name']] = field_data
+
+                index += field['len']
+            else:
+                field_data = data[index:]
+                if index + len(field_data) != len(data):
+                    raise ValueError("Total data bytes {} with field {} "
+                                     "exceeds expected {}".format(
+                                          index+len(field_data),
+                                          field['name'], len(data))
+                                     )
+
+                # Were there any remaining bytes?
+                if field_data:
+                    # If so, store them
+                    parsed[field['name']] = field_data
+                    index += len(field_data)
+                break
+
+        # If there are more bytes than expected, raise an exception
+        if index < len(data):
+            raise ValueError("Response packet was longer than expected; "
+                             "expected: {}, got: {} bytes".format(
+                                 index, len(data))
+                             )
+        return parsed
+      
     def _split_response(self, data):
         """
         _split_response: binary data -> {'id':str,

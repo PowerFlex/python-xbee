@@ -93,6 +93,17 @@ class XBeeBase(_XBeeBase):
                 if self._error_callback:
                     self._error_callback(e)
 
+    def wait_sniff_sent_frame(self):
+		"""
+		wait_sniff_sent_frame: None -> frame into dictionary
+
+        wait_sniff_sent_frame calls XBee._wait_for_frame() and waits until a
+        valid frame appears on the serial port. Once it receives a frame,
+        wait_read_frame attempts to parse the data contained within it
+		"""
+		frame = self._wait_for_frame()
+		return self._split_sniffed(frame.data)
+
     def wait_read_frame(self):
         """
         wait_read_frame: None -> frame info dictionary

@@ -1,3 +1,11 @@
+Why We Forked?
+====
+
+We forked python-xbee to be able to intercepts all commands being issued to an xbee coordinator
+and create arbitrary responses.  This should help debugging programs that interact with an xbee
+coordinator and xbee nodes that are attached.
+
+
 XBee
 ====
 
