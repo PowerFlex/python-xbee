@@ -5,6 +5,14 @@ We forked python-xbee to be able to intercepts all commands being issued to an x
 and create arbitrary responses.  This should help debugging programs that interact with an xbee
 coordinator and xbee nodes that are attached.
 
+In the examples directory:
+
+  setup_ttyUSB0.sh gives an example of creating and connecting two serial devices together so
+    the program that issues xbee commands can open /dev/ttyUSB0, while the interception program
+    using the modified python-xbee can open /dev/ttyXBC0.
+
+  rigbee_coord.py is a very simple example of the interception program.
+
 
 XBee
 ====
