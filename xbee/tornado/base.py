@@ -93,10 +93,19 @@ class XBeeBase(_XBeeBase):
                 info = self._split_response(frame.data)
                 if info is not None:
                     self._callback(info)
+                else:
+                   parsed = self._split_sniffed(frame.data)
+                   if parsed is not None:
+                       self._callback(parsed)
             except Exception as e:
                 # Unexpected quit.
                 if self._error_callback:
                     self._error_callback(e)
+    @gen.coroutine
+    def wait_sniff_sent_frame(self):
+        frame = yield self._get_frame()
+        raise gen.Return(self._split_sniffed(frame.data))
+
 
     @gen.coroutine
     def wait_read_frame(self):
@@ -109,7 +118,6 @@ class XBeeBase(_XBeeBase):
             future.set_result(self._frame_queue.popleft())
         else:
             self._frame_future = future
-
         return future
 
     def _process_input(self, data, events):

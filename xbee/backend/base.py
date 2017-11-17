@@ -78,6 +78,64 @@ class XBeeBase(object):
         frame = APIFrame(data, self._escaped).output()
         self.serial.write(frame)
 
+    def _build_response(self, frame_type, **kwargs):
+        """
+        _build_response: string (binary data) ... -> binary data
+
+        _build_response will construct a response packet according to the
+        specified response's specification in api_responses. It will expect
+        named arguments for all fields other than those with a default
+        value or a length of 'None'.
+
+        Each field will be written out in the order they are defined
+        in the response definition.
+        """
+        try:
+            rsp_spec = self.api_responses[frame_type]['structure']
+        except AttributeError:
+            raise NotImplementedError("API response specification could not be "
+                                      "found; use a derived class which defines"
+                                      " 'api_responses'.")
+        # the api_responses has no field names for frame type and frame id
+        packet = frame_type + b'\00'
+
+        for field in rsp_spec:
+            try:
+                # Read this field's name from the function arg dict
+                data = kwargs[field['name']]
+                if isinstance(data, str):
+                     data = stringToBytes(data)
+            except KeyError:
+                # Needs keyword arg if the field has a specific lenght
+                if field['len'] is not None:
+                    # Is there a default value?
+                    if field['default']:
+                        data = field['default']
+                    else:
+                        raise KeyError(
+                            "The expected field {} of length {} "
+                            "was not provided".format(
+                                field['name'], field['len']
+                            )
+                        )
+                else: 
+                    # No specific lenghth, ignore
+                    data = None
+
+            # Ensure that the proper number of elements will be written
+            if field['len'] and len(data) != field['len']:
+                raise ValueError(
+                    "The data provided for '{}' was not {} "
+                    "bytes long".format(field['name'], field['len'])
+                )
+
+            # Add the data to the packet, if it has been specified.
+            # Otherwise, the parameter was of variable length, and not given.
+            if data:
+                packet += data
+
+        return packet
+
     def _build_command(self, cmd, **kwargs):
         """
         _build_command: string (binary data) ... -> binary data
@@ -154,9 +212,7 @@ class XBeeBase(object):
         """
         frame_type = data[0]
         frame_spec = None
-        print "Frame Type:", frame_type
         for name, field_list in self.api_commands.iteritems():
-            print "Name:", name, field_list
             if field_list[0]['default'] == frame_type:
                 frame_spec = field_list
 
@@ -393,6 +449,25 @@ class XBeeBase(object):
             samples.append(tmp_samples)
 
         return samples
+
+    def send_api_response(self, frame_type, **kwargs):
+        """
+        send_api_response: string param=binary data ... -> None
+        send_api_response send a response that is normally sent by a
+        xbee receiver.
+
+        When send_api_response is called with the proper arguments,
+        an API response will be written to the serial port for this
+        XBee device containing the proper instructions and data.
+
+        This method must be called with named arguments in accordance
+        with the api_response specification. Arguments matching all
+        field names other than those in reserved_names (like 'id' and
+        'order') should be given, unless they are of variable length
+        (of 'None' in the specification. Those are optional).
+        """
+        # Pass through the keyword arguments
+        self._write(self._build_response(frame_type, **kwargs))
 
     def send(self, cmd, **kwargs):
         """
