@@ -205,7 +205,7 @@ class XBeeBase(object):
                                          'param':binary data,
                                          ...}
 
-        _split_sniffed takes a sniffed data packet sent to an XBee device
+        _split_sniffed takes a sniffed api packet sent by an XBee coordinator
         and converts it into a dictionary. This dictionary provides
         names for each segment of binary data as specified in the
         api_commands spec.

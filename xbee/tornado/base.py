@@ -102,7 +102,7 @@ class XBeeBase(_XBeeBase):
                 if self._error_callback:
                     self._error_callback(e)
     @gen.coroutine
-    def wait_sniff_sent_frame(self):
+    def wait_sniff_api_frame(self):
         frame = yield self._get_frame()
         raise gen.Return(self._split_sniffed(frame.data))
 
