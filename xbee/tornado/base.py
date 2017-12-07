@@ -94,7 +94,7 @@ class XBeeBase(_XBeeBase):
                 if info is not None:
                     self._callback(info)
                 else:
-                   parsed = self._split_sniffed(frame.data)
+                   parsed = self._split_api_frame(frame.data)
                    if parsed is not None:
                        self._callback(parsed)
             except Exception as e:
@@ -104,7 +104,7 @@ class XBeeBase(_XBeeBase):
     @gen.coroutine
     def wait_sniff_api_frame(self):
         frame = yield self._get_frame()
-        raise gen.Return(self._split_sniffed(frame.data))
+        raise gen.Return(self._split_api_frame(frame.data))
 
 
     @gen.coroutine

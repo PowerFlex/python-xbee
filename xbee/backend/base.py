@@ -97,7 +97,7 @@ class XBeeBase(object):
                                       "found; use a derived class which defines"
                                       " 'api_responses'.")
         # the api_responses has no field names for frame type and frame id
-        packet = frame_type + b'\00'
+        packet = frame_type
 
         for field in rsp_spec:
             try:
@@ -106,7 +106,7 @@ class XBeeBase(object):
                 if isinstance(data, str):
                      data = stringToBytes(data)
             except KeyError:
-                # Needs keyword arg if the field has a specific lenght
+                # Needs keyword arg if the field has a specific length
                 if field['len'] is not None:
                     # Is there a default value?
                     if field['default']:
@@ -133,6 +133,8 @@ class XBeeBase(object):
             # Otherwise, the parameter was of variable length, and not given.
             if data:
                 packet += data
+
+        #print "SENDING", ":".join("{:02x}".format(ord(c)) for c in packet)
 
         return packet
 
@@ -199,13 +201,13 @@ class XBeeBase(object):
 
         return packet
 
-    def _split_sniffed(self, data):
+    def _split_api_frame(self, data):
         """
-        _split_sniffed: binary data -> {'id':str,
+        _split_api_frame: binary data -> {'id':str,
                                          'param':binary data,
                                          ...}
 
-        _split_sniffed takes a sniffed api packet sent by an XBee coordinator
+        _split_api_frame takes a sniffed api packet sent by an XBee coordinator
         and converts it into a dictionary. This dictionary provides
         names for each segment of binary data as specified in the
         api_commands spec.
